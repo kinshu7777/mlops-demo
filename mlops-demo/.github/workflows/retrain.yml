@@ -1,0 +1,47 @@
+# STEP 6: The "automatic" part of MLOps.
+#
+# In plain words: this file tells GitHub "every day (or whenever I push
+# code), run the drift check. If drift is found, train a new model and
+# save it back into the repo." No human has to remember to do this.
+#
+# You can also trigger it manually from the GitHub "Actions" tab.
+
+name: Check Drift and Retrain
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # every day at 6am UTC
+  workflow_dispatch:        # lets you click a button to run it manually
+
+jobs:
+  drift-and-retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check for data drift
+        id: drift
+        run: python3 drift_check.py
+        continue-on-error: true   # exit code 1 means "drift found", not "crash"
+
+      - name: Retrain model if drift was found
+        if: steps.drift.outcome == 'failure'
+        run: python3 train.py
+
+      - name: Save updated models back to the repo
+        if: steps.drift.outcome == 'failure'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add models/
+          git commit -m "Auto-retrain: drift detected" || echo "Nothing to commit"
+          git push

@@ -1,0 +1,12 @@
+{
+  "data_dir": "data",
+  "old_data_file": "old_deliveries.csv",
+  "new_data_file": "new_deliveries.csv",
+  "models_dir": "models",
+  "features": ["distance_km", "num_stops", "is_rush_hour", "driver_experience"],
+  "target": "delivery_minutes",
+  "drift_p_value_threshold": 0.05,
+  "api_host": "127.0.0.1",
+  "api_port": 8000,
+  "dashboard_port": 8501
+}
